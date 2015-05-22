@@ -1,4 +1,4 @@
-source 'https://rubygems.org'
+source 'http://ruby.taobao.org'
 
 # Specify your gem's dependencies in scope_cache_key.gemspec
 gemspec
@@ -11,4 +11,5 @@ end
 
 platforms :ruby, :mswin, :mingw do
   gem 'pg'
+  gem 'mysql2'
 end

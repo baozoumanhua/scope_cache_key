@@ -23,25 +23,22 @@ RSpec.configure do |config|
   config.order = 'random'
 end
 
-ActiveRecord::Base.configurations = {'postgresql' => {:adapter => 'postgresql', :database => 'postgres'}}
-ActiveRecord::Base.establish_connection('postgresql')
-ActiveRecord::Base.connection.drop_database(DB_NAME) rescue nil
-ActiveRecord::Base.connection.create_database(DB_NAME)
-ActiveRecord::Base.configurations = {'postgresql' => {:adapter => 'postgresql', :database => DB_NAME}}
-ActiveRecord::Base.establish_connection('postgresql')
+ActiveRecord::Base.configurations = {'mysql2' => {:adapter => 'mysql2', :database => DB_NAME, :host => 'localhost'}}
+ActiveRecord::Base.establish_connection('mysql2')
+ActiveRecord::Base.connection.create_database(DB_NAME) rescue nil
 ActiveRecord::Base.logger = Logger.new(STDERR)
 ActiveRecord::Base.logger.level = Logger::WARN
 
 ActiveRecord::Migration.verbose = false
 
 ActiveRecord::Schema.define(:version => 0) do
-  create_table :articles do |t|
+  create_table :articles, force: true do |t|
     t.string :title
     t.text :body
     t.timestamps
   end
 
-  create_table :comments do |t|
+  create_table :comments, force: true do |t|
     t.references :article
     t.text :body
     t.string :user
