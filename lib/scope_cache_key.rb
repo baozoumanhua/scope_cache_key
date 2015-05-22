@@ -18,7 +18,7 @@ module ScopeCacheKey
   #
 
   def cache_key
-    if connection.adapter_name == 'Pg'
+    if connection.adapter_name == 'PostgreSQL'
       scope_sql = where(nil).select("#{table_name}.id, #{table_name}.updated_at").to_sql
       sql = "SELECT md5(array_agg(id || '-' || updated_at)::text) FROM (#{scope_sql}) as query"
     elsif connection.adapter_name == 'Mysql2'
