@@ -16,19 +16,18 @@ module ScopeCacheKey
   #   Item.cache_key # => "0b27dac757428d88c0f3a0298eb0278f"
   #   Item.active.cache_key # => "0b27dac757428d88c0f3a0298eb0278e"
   #
-  def cache_key
-    scope_sql = where(nil).select("#{table_name}.id, #{table_name}.updated_at").to_sql
 
-    sql = "SELECT md5(array_agg(id || '-' || updated_at)::text) " +
-          "FROM (#{scope_sql}) as query"
+  def cache_key
+    if connection.adapter_name == 'Pg'
+      scope_sql = where(nil).select("#{table_name}.id, #{table_name}.updated_at").to_sql
+      sql = "SELECT md5(array_agg(id || '-' || updated_at)::text) FROM (#{scope_sql}) as query"
+    elsif connection.adapter_name == 'Mysql2'
+      sql = where(nil).select("md5(GROUP_CONCAT(#{table_name}.`id` ,'-', #{table_name}.`updated_at` order by id asc SEPARATOR '|'))").to_sql
+    end 
 
     md5 = connection.select_value(sql)
 
-    key = if md5.present?
-      md5
-    else
-      "empty"
-    end
+    key = md5.present? ? md5 : "empty"
 
     "#{model_name.cache_key}/#{key}"
   end
