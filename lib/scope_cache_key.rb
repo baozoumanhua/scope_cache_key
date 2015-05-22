@@ -18,18 +18,22 @@ module ScopeCacheKey
   #
 
   def cache_key
-    if connection.adapter_name == 'PostgreSQL'
-      scope_sql = where(nil).select("#{table_name}.id, #{table_name}.updated_at").to_sql
-      sql = "SELECT md5(array_agg(id || '-' || updated_at)::text) FROM (#{scope_sql}) as query"
-    elsif connection.adapter_name == 'Mysql2'
-      sql = where(nil).select("md5(GROUP_CONCAT(#{table_name}.`id` ,'-', #{table_name}.`updated_at` order by id asc SEPARATOR '|'))").to_sql
-    end 
-
-    md5 = connection.select_value(sql)
-
-    key = md5.present? ? md5 : "empty"
-
-    "#{model_name.cache_key}/#{key}"
+    @cache_key ||= begin
+      if connection.adapter_name == 'PostgreSQL'
+        scope_sql = where(nil).select("#{table_name}.id, #{table_name}.updated_at").to_sql
+        sql = "SELECT md5(array_agg(id || '-' || updated_at)::text) FROM (#{scope_sql}) as query"
+      elsif connection.adapter_name == 'Mysql2'
+        sql = where(nil).select("md5(GROUP_CONCAT(#{table_name}.`id` ,'-', #{table_name}.`updated_at` order by id asc SEPARATOR '|'))").to_sql
+      end 
+      
+      md5 = Rails.cache.fetch([:scope_cache_key, sql], expires_in: 10.minutes, race_condition_ttl: 10) do 
+        connection.select_value(sql)
+      end
+  
+      key = md5.present? ? md5 : "empty"
+  
+      "#{model_name.cache_key}/#{key}"
+    end
   end
 end
 
